@@ -51,7 +51,28 @@
         .btn-glow:hover {
             box-shadow: 0 15px 30px -5px rgba(255, 122, 0, 0.6);
         }
+        /* Elementos escondidos até o vídeo chegar aos 20 minutos */
+        .esconder { display: none !important; }
+        /* Bloqueio de scroll enquanto o vídeo não chega aos 20 minutos */
+        html.scroll-locked, html.scroll-locked body {
+            overflow: hidden !important;
+            height: 100%;
+            overscroll-behavior: none;
+            touch-action: none;
+        }
     </style>
+    <script>
+        // Aplica o bloqueio imediatamente (antes de a página carregar), a não ser que já tenha sido desbloqueado
+        (function () {
+            try {
+                if (localStorage.getItem('vsl_unlocked_20min') !== '1') {
+                    document.documentElement.classList.add('scroll-locked');
+                }
+            } catch (e) {
+                document.documentElement.classList.add('scroll-locked');
+            }
+        })();
+    </script>
 </head>
 <body class="bg-white text-gray-900 antialiased selection:bg-orange-100 selection:text-brand min-h-screen pb-24">
 
@@ -89,7 +110,7 @@
         </section>
 
         <!-- 2. BOTÃO PRINCIPAL (Logo abaixo do vídeo) -->
-        <section class="w-full flex flex-col items-center mb-12 sm:mb-16">
+        <section class="esconder w-full flex flex-col items-center mb-12 sm:mb-16">
             <a href="https://pay.lojou.app/RveAd" 
                target="_blank" 
                rel="noopener noreferrer"
@@ -107,7 +128,7 @@
         </section>
 
         <!-- SEÇÃO O QUE VOCÊ VAI RECEBER: OBSESSÃO DO PROVEDOR + BÔNUS -->
-        <section class="w-full bg-orange-50/40 rounded-3xl p-6 sm:p-10 border border-orange-100 mb-16 sm:mb-20">
+        <section class="esconder w-full bg-orange-50/40 rounded-3xl p-6 sm:p-10 border border-orange-100 mb-16 sm:mb-20">
             <div class="text-center mb-8">
                 <span class="inline-block px-4 py-1.5 bg-orange-100 text-brand font-bold text-xs rounded-full uppercase mb-2">
                     Programa Completo + Presentes Exclusivos
@@ -187,7 +208,7 @@
 
 
         <!-- 3. DEPOIMENTOS REALISTAS -->
-        <section class="w-full mb-16 sm:mb-20">
+        <section class="esconder w-full mb-16 sm:mb-20">
             <div class="text-center mb-10">
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 uppercase tracking-tight">
                     Histórias Reais De Quem Já Aplicou
@@ -277,7 +298,7 @@
         </section>
 
         <!-- SEÇÃO DE GARANTIA INCONDICIONAL DE 60 DIAS -->
-        <section class="w-full bg-white rounded-3xl p-6 sm:p-8 border-2 border-dashed border-gray-200 mb-16 sm:mb-20 flex flex-col sm:flex-row items-center gap-6">
+        <section class="esconder w-full bg-white rounded-3xl p-6 sm:p-8 border-2 border-dashed border-gray-200 mb-16 sm:mb-20 flex flex-col sm:flex-row items-center gap-6">
             <div class="w-24 h-24 sm:w-28 sm:h-28 shrink-0 flex items-center justify-center bg-amber-50 rounded-full border-2 border-amber-200">
                 <i class="fa-solid fa-award text-4xl sm:text-5xl text-amber-500"></i>
             </div>
@@ -292,7 +313,7 @@
         </section>
 
         <!-- 5. FINAL DA PÁGINA (Botão CTA Final) -->
-        <section class="w-full text-center py-10 px-4 bg-orange-50/50 rounded-3xl border border-orange-100 mb-12 flex flex-col items-center">
+        <section class="esconder w-full text-center py-10 px-4 bg-orange-50/50 rounded-3xl border border-orange-100 mb-12 flex flex-col items-center">
             <h3 class="text-2xl sm:text-3xl font-black text-gray-900 uppercase mb-3">
                 PRONTO PARA DAR O PRÓXIMO PASSO?
             </h3>
@@ -316,7 +337,7 @@
     </main>
 
     <!-- FOOTER MÍNIMO BRANCO -->
-    <footer class="w-full py-6 text-center text-xs text-gray-400 border-t border-gray-100 bg-white">
+    <footer class="esconder w-full py-6 text-center text-xs text-gray-400 border-t border-gray-100 bg-white">
         <p>© 2026 Todos os direitos reservados.</p>
         <p class="mt-1">Página desenvolvida para máxima segurança e velocidade de navegação.</p>
     </footer>
@@ -329,5 +350,71 @@
         document.head.appendChild(s); 
     </script>
 
-    <!-- 4. BOTÃO FLUTUANTE (Fixed na parte inferior) -->
-<!-- ... existing code -->
+    <!-- CONTROLO: botão de checkout + scroll só após 20 minutos de vídeo -->
+    <script>
+        (function () {
+            var UNLOCK_SECONDS = 20 * 60; // 20 minutos
+            var STORAGE_KEY = 'vsl_unlocked_20min';
+            var unlocked = false;
+            var html = document.documentElement;
+
+            // --- Bloqueio de scroll (wheel, toque, teclado) ---
+            function stop(e) { if (!unlocked) { e.preventDefault(); } }
+            function keyBlock(e) {
+                if (unlocked) return;
+                var keys = [32, 33, 34, 35, 36, 37, 38, 39, 40]; // espaço, page up/down, home/end, setas
+                if (keys.indexOf(e.keyCode) !== -1) e.preventDefault();
+            }
+            window.addEventListener('wheel', stop, { passive: false });
+            window.addEventListener('touchmove', stop, { passive: false });
+            window.addEventListener('keydown', keyBlock, { passive: false });
+            window.addEventListener('scroll', function () {
+                if (!unlocked && window.scrollY !== 0) window.scrollTo(0, 0);
+            });
+
+            function unlock() {
+                if (unlocked) return;
+                unlocked = true;
+                try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
+                html.classList.remove('scroll-locked');
+                var els = document.querySelectorAll('.esconder');
+                for (var i = 0; i < els.length; i++) els[i].classList.remove('esconder');
+            }
+
+            // Já desbloqueado numa visita anterior
+            try { if (localStorage.getItem(STORAGE_KEY) === '1') { unlock(); return; } } catch (e) {}
+
+            // --- Leitura do tempo do vídeo (Vturb SmartPlayer) ---
+            function getTime(player, ev) {
+                try {
+                    if (typeof ev === 'number') return ev;
+                    if (ev && ev.detail && typeof ev.detail.currentTime === 'number') return ev.detail.currentTime;
+                    if (ev && typeof ev.currentTime === 'number') return ev.currentTime;
+                    if (player && player.instance && typeof player.instance.currentTime === 'number') return player.instance.currentTime;
+                } catch (e) {}
+                return 0;
+            }
+
+            function setup() {
+                var player = document.querySelector('#vid-6ade302eee3bcd85100353bb');
+                if (!player) return;
+
+                function check(ev) { if (getTime(player, ev) >= UNLOCK_SECONDS) unlock(); }
+
+                player.addEventListener('player:ready', function () {
+                    try {
+                        if (player.instance && typeof player.instance.on === 'function') {
+                            player.instance.on('timeupdate', check);
+                        }
+                    } catch (e) {}
+                });
+
+                // Plano B: verifica a cada segundo
+                setInterval(function () { if (!unlocked) check(); }, 1000);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setup);
+            } else { setup(); }
+        })();
+    </script>
